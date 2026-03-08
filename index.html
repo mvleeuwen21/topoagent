@@ -367,7 +367,7 @@ function loadQ(idx){
   clearTimeout(gs.hintTimer);
   gs.idx=idx;gs.answered=false;gs.questionStart=Date.now();
   const loc=gs.queue[idx];
-  const missionHtml=esc(loc.mt).replace(esc(loc.name),'<span class="loc-name">'+esc(loc.name)+'</span>');
+  const missionHtml=esc(loc.mt.replace(loc.name,'\x00NAME\x00')).replace('\x00NAME\x00','<span class="loc-name">'+esc(loc.name)+'</span>');
   document.getElementById('g-mission').innerHTML=missionHtml;
   document.getElementById('g-prog').textContent=(idx+1)+' / '+gs.queue.length;
   const fb=document.getElementById('feedback');fb.className='feedback';fb.textContent='';
