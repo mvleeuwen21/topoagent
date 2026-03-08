@@ -59,6 +59,7 @@ label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--tex
 .mission-panel{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);padding:14px 18px}
 .mission-lbl{font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:5px}
 .mission-txt{font-size:clamp(15px,2.2vw,18px);font-weight:600;line-height:1.5}
+.mission-txt .loc-name{color:#fff;background:var(--accent);padding:1px 7px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.9em;letter-spacing:1px}
 .hints-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:38px}
 .hint-box{background:rgba(0,255,136,.05);border:1px solid var(--border-bright);padding:7px 13px;font-size:14px;color:var(--accent);flex:1;min-width:200px;display:none}
 .map-wrap{position:relative;width:100%;flex:1;min-height:0;border:2px solid var(--border);box-shadow:0 0 25px rgba(0,255,136,.08);overflow:hidden}
@@ -366,7 +367,8 @@ function loadQ(idx){
   clearTimeout(gs.hintTimer);
   gs.idx=idx;gs.answered=false;gs.questionStart=Date.now();
   const loc=gs.queue[idx];
-  document.getElementById('g-mission').textContent=loc.mt;
+  const missionHtml=esc(loc.mt).replace(esc(loc.name),'<span class="loc-name">'+esc(loc.name)+'</span>');
+  document.getElementById('g-mission').innerHTML=missionHtml;
   document.getElementById('g-prog').textContent=(idx+1)+' / '+gs.queue.length;
   const fb=document.getElementById('feedback');fb.className='feedback';fb.textContent='';
   renderMarkers(loc.id);
