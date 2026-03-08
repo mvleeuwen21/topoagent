@@ -59,7 +59,7 @@ label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--tex
 .mission-panel{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);padding:14px 18px}
 .mission-lbl{font-size:10px;letter-spacing:3px;color:var(--accent);margin-bottom:5px}
 .mission-txt{font-size:clamp(15px,2.2vw,18px);font-weight:600;line-height:1.5}
-.mission-txt .loc-name{color:#fff;background:var(--accent);padding:1px 7px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.9em;letter-spacing:1px}
+.mission-txt .loc-name{color:#0a0a0f;background:var(--accent);padding:2px 8px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.9em;font-weight:900;letter-spacing:1px}
 .hints-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-height:38px}
 .hint-box{background:rgba(0,255,136,.05);border:1px solid var(--border-bright);padding:7px 13px;font-size:14px;color:var(--accent);flex:1;min-width:200px;display:none}
 .map-wrap{position:relative;width:100%;flex:1;min-height:0;border:2px solid var(--border);box-shadow:0 0 25px rgba(0,255,136,.08);overflow:hidden}
@@ -96,6 +96,7 @@ label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--tex
 .t10-rank.g{color:#ffd700}.t10-rank.s{color:#c0c0c0}.t10-rank.b{color:#cd7f32}
 .t10-name{flex:1;font-size:17px;font-weight:600}
 .t10-pts{font-family:'Orbitron',monospace;font-size:17px;color:var(--accent)}
+.t10-ok{font-size:13px;color:var(--text-dim);white-space:nowrap}
 .t10-date{font-size:11px;color:var(--text-dim)}
 .t10-empty{text-align:center;color:var(--text-dim);padding:40px;font-size:15px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
@@ -445,7 +446,7 @@ function endGame(){
   document.getElementById('res-fail').textContent=gs.fail;
   document.getElementById('rank-badge').style.display='none';
   showScreen('result');
-  if(gs.score>0)saveScore(gs.name,gs.score);
+  if(gs.score>0)saveScore(gs.name,gs.score,gs.ok);
 }
 async function loadTop10(){
   const list=document.getElementById('t10-list'),ld=document.getElementById('t10-loading');
@@ -462,8 +463,8 @@ async function fetchScores(){
   }
   try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch{return[];}
 }
-async function saveScore(name,score){
-  const entry={name,score,date:new Date().toLocaleDateString('nl-NL')};
+async function saveScore(name,score,ok){
+  const entry={name,score,ok:ok||0,date:new Date().toLocaleDateString('nl-NL')};
   if(cfg.jsonbinId&&cfg.jsonbinKey){
     try{
       const r=await fetch('https://api.jsonbin.io/v3/b/'+cfg.jsonbinId+'/latest',{headers:{'X-Master-Key':cfg.jsonbinKey}});
@@ -485,7 +486,7 @@ function renderTop10(arr){
   const list=document.getElementById('t10-list');
   if(!arr.length){list.innerHTML='<div class="t10-empty">Nog geen scores. Speel het spel!</div>';return;}
   const m=['g','s','b'];
-  list.innerHTML=arr.map((s,i)=>`<div class="t10-row ${s.name===gs.name&&s.score===gs.score?'hl':''}"><div class="t10-rank ${m[i]||''}">${i<3?['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'][i]:i+1}</div><div class="t10-name">${esc(s.name)}</div><div class="t10-pts">${s.score}</div><div class="t10-date">${s.date||''}</div></div>`).join('');
+  list.innerHTML=arr.map((s,i)=>`<div class="t10-row ${s.name===gs.name&&s.score===gs.score?'hl':''}"><div class="t10-rank ${m[i]||''}">${i<3?['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'][i]:i+1}</div><div class="t10-name">${esc(s.name)}</div><div class="t10-ok">${s.ok||0} goed</div><div class="t10-pts">${s.score}</div><div class="t10-date">${s.date||''}</div></div>`).join('');
 }
 function checkPw(){
   const v=document.getElementById('adm-pw').value;
@@ -582,15 +583,16 @@ async function exportHTML(){
   const status=document.getElementById('export-status');
   status.textContent='Bezig...';
   try{
-    const resp=await fetch(window.location.href);
-    let src=await resp.text();
+    let src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
     const newLocs=JSON.stringify(cfg.locations.map(l=>({id:l.id,name:l.name,x:l.x,y:l.y,mt:l.mt,hints:l.hints})));
     src=src.replace(/const DEFAULTS=\[[\s\S]*?\];/,'const DEFAULTS='+newLocs+';');
     src=src.replace(/timerSeconds:\d+/,'timerSeconds:'+cfg.timerSeconds);
     src=src.replace(/adminPassword:'[^']*'/,"adminPassword:'"+cfg.adminPassword+"'");
+    src=src.replace(/jsonbinId:'[^']*'/,"jsonbinId:'"+( cfg.jsonbinId||'')+"'");
+    src=src.replace(/jsonbinKey:'[^']*'/,"jsonbinKey:'"+(cfg.jsonbinKey||'')+"'");
     const blob=new Blob([src],{type:'text/html;charset=utf-8'});
     if(window.showSaveFilePicker){
-      const fh=await window.showSaveFilePicker({suggestedName:'topoagent.html',types:[{description:'HTML-bestand',accept:{'text/html':['.html']}}]});
+      const fh=await window.showSaveFilePicker({suggestedName:'index.html',types:[{description:'HTML-bestand',accept:{'text/html':['.html']}}]});
       const w=await fh.createWritable();
       await w.write(blob);
       await w.close();
