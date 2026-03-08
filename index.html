@@ -95,6 +95,7 @@ label{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--tex
 .t10-rank{font-family:'Orbitron',monospace;font-size:17px;width:32px;text-align:center;color:var(--text-dim)}
 .t10-rank.g{color:#ffd700}.t10-rank.s{color:#c0c0c0}.t10-rank.b{color:#cd7f32}
 .t10-name{flex:1;font-size:17px;font-weight:600}
+.t10-ok{font-size:13px;color:var(--text-dim);white-space:nowrap}
 .t10-pts{font-family:'Orbitron',monospace;font-size:17px;color:var(--accent)}
 .t10-date{font-size:11px;color:var(--text-dim)}
 .t10-empty{text-align:center;color:var(--text-dim);padding:40px;font-size:15px}
@@ -445,7 +446,7 @@ function endGame(){
   document.getElementById('res-fail').textContent=gs.fail;
   document.getElementById('rank-badge').style.display='none';
   showScreen('result');
-  if(gs.score>0)saveScore(gs.name,gs.score);
+  if(gs.score>0)saveScore(gs.name,gs.score,gs.ok);
 }
 async function loadTop10(){
   const list=document.getElementById('t10-list'),ld=document.getElementById('t10-loading');
@@ -462,8 +463,8 @@ async function fetchScores(){
   }
   try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch{return[];}
 }
-async function saveScore(name,score){
-  const entry={name,score,date:new Date().toLocaleDateString('nl-NL')};
+async function saveScore(name,score,ok){
+  const entry={name,score,ok:ok||0,date:new Date().toLocaleDateString('nl-NL')};
   if(cfg.jsonbinId&&cfg.jsonbinKey){
     try{
       const r=await fetch('https://api.jsonbin.io/v3/b/'+cfg.jsonbinId+'/latest',{headers:{'X-Master-Key':cfg.jsonbinKey}});
@@ -485,7 +486,7 @@ function renderTop10(arr){
   const list=document.getElementById('t10-list');
   if(!arr.length){list.innerHTML='<div class="t10-empty">Nog geen scores. Speel het spel!</div>';return;}
   const m=['g','s','b'];
-  list.innerHTML=arr.map((s,i)=>`<div class="t10-row ${s.name===gs.name&&s.score===gs.score?'hl':''}"><div class="t10-rank ${m[i]||''}">${i<3?['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'][i]:i+1}</div><div class="t10-name">${esc(s.name)}</div><div class="t10-pts">${s.score}</div><div class="t10-date">${s.date||''}</div></div>`).join('');
+  list.innerHTML=arr.map((s,i)=>`<div class="t10-row ${s.name===gs.name&&s.score===gs.score?'hl':''}"><div class="t10-rank ${m[i]||''}">${i<3?['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'][i]:i+1}</div><div class="t10-name">${esc(s.name)}</div><div class="t10-ok">${s.ok||0} goed</div><div class="t10-pts">${s.score}</div><div class="t10-date">${s.date||''}</div></div>`).join('');
 }
 function checkPw(){
   const v=document.getElementById('adm-pw').value;
