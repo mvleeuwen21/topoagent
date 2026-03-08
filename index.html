@@ -355,7 +355,7 @@ function startGame(){
   showScreen('game');
   document.getElementById('game-map').src=cfg.mapImage;
   document.getElementById('g-badge').textContent='AGENT '+name.toUpperCase();
-  updateScore();loadQ(0);startGameTimer();
+  updateScore();requestAnimationFrame(()=>{loadQ(0);startGameTimer();});
 }
 function updateLives(){const el=document.getElementById('g-lives');el.innerHTML='';for(let i=0;i<3;i++){const s=document.createElement('span');s.className='life'+(i>=gs.lives?' lost':'');s.textContent='\u2764';el.appendChild(s);}}
 function updateScore(){document.getElementById('g-score').textContent=gs.score;}
