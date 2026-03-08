@@ -340,7 +340,7 @@ function loadCfg(){
 function defCfg(){return{adminPassword:'spion123',timerSeconds:60,locations:DEFAULTS.map(d=>({...d})),jsonbinId:'',jsonbinKey:'',mapImage:MB};}
 function saveConfig(){localStorage.setItem(SK,JSON.stringify(cfg));}
 let gs={};
-function resetGs(){gs={name:'',queue:[],idx:0,score:0,ok:0,fail:0,timer:null,timeLeft:0,answered:false,hintTimer:null};}
+function resetGs(){gs={name:'',queue:[],idx:0,score:0,ok:0,fail:0,timer:null,timeLeft:0,answered:false,hintTimer:null,questionStart:0};}
 resetGs();
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');if(id==='start')initStart();if(id==='admin-dashboard')initAdmDash();}
 function initStart(){const n=cfg.locations.filter(l=>l.x!==null).length;document.getElementById('loc-count').textContent=n;document.getElementById('timer-info').textContent=cfg.timerSeconds;}
@@ -364,7 +364,7 @@ function updateScore(){document.getElementById('g-score').textContent=gs.score;}
 function loadQ(idx){
   if(idx>=gs.queue.length){endGame();return;}
   clearTimeout(gs.hintTimer);
-  gs.idx=idx;gs.answered=false;
+  gs.idx=idx;gs.answered=false;gs.questionStart=Date.now();
   const loc=gs.queue[idx];
   document.getElementById('g-mission').textContent=loc.mt;
   document.getElementById('g-prog').textContent=(idx+1)+' / '+gs.queue.length;
@@ -373,7 +373,7 @@ function loadQ(idx){
   gs.hintTimer=setTimeout(()=>{
     const tgt=document.querySelector('.marker[data-id="'+loc.id+'"]');
     if(tgt&&!gs.answered)tgt.classList.add('hint-pulse');
-  },5000);
+  },10000);
 }
 function imgRenderBounds(img){
   const cW=img.parentElement.clientWidth,cH=img.parentElement.clientHeight;
@@ -401,9 +401,11 @@ function handleClick(cid,tid){
   const el=document.querySelector('.marker[data-id="'+cid+'"]');
   if(ok){
     gs.answered=true;clearTimeout(gs.hintTimer);
-    gs.score+=100;gs.ok++;updateScore();
+    const elapsed=(Date.now()-gs.questionStart)/1000;
+    const pts=100+Math.max(0,Math.round((10-elapsed)*10));
+    gs.score+=pts;gs.ok++;updateScore();
     if(el)el.classList.add('correct');
-    showFeedback('\u2713 DOEL BEREIKT! +100 PT',true);
+    showFeedback('\u2713 DOEL BEREIKT! +'+pts+' PT',true);
     setTimeout(()=>loadQ(gs.idx+1),600);
   }else{
     gs.fail++;
