@@ -431,6 +431,7 @@ function handleClick(cid,tid){
       if(el)el.classList.add('correct');
       const car=document.getElementById('police-car');
       if(car){car.classList.remove('anim-siren');car.classList.add('anim-correct');setTimeout(()=>car.classList.remove('anim-correct'),900);}
+      playSound('correct');
       showFeedback('\u2713 DOEL BEREIKT! +'+pts+' PT',true);
       setTimeout(()=>loadQ(gs.idx+1),950);
     });
@@ -440,6 +441,7 @@ function handleClick(cid,tid){
       if(el){el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),500);}
       const car=document.getElementById('police-car');
       if(car){car.classList.remove('anim-correct');car.classList.add('anim-siren');setTimeout(()=>car.classList.remove('anim-siren'),800);}
+      playSound('wrong');
       showFeedback('\u2717 VERKEERD DOEL!',false);
     });
   }
@@ -453,6 +455,39 @@ function setTimerUI(t,total){
   const bar=document.getElementById('t-bar'),sec=document.getElementById('t-sec');
   bar.style.width=pct+'%';const urg=t<=5;
   bar.classList.toggle('urg',urg);sec.textContent=t;sec.classList.toggle('urg',urg);
+}
+function playSound(type){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    if(type==='correct'){
+      // Vrolijk oplopend akkoord
+      [[523,0],[659,.1],[784,.2],[1047,.35]].forEach(([freq,delay])=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.type='sine';o.frequency.value=freq;
+        g.gain.setValueAtTime(0,ctx.currentTime+delay);
+        g.gain.linearRampToValueAtTime(.35,ctx.currentTime+delay+.05);
+        g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+delay+.35);
+        o.start(ctx.currentTime+delay);o.stop(ctx.currentTime+delay+.4);
+      });
+    }else{
+      // Sirene: dalende toon + lage dreun
+      const o1=ctx.createOscillator(),g1=ctx.createGain();
+      o1.connect(g1);g1.connect(ctx.destination);
+      o1.type='sawtooth';
+      o1.frequency.setValueAtTime(880,ctx.currentTime);
+      o1.frequency.linearRampToValueAtTime(220,ctx.currentTime+.5);
+      g1.gain.setValueAtTime(.3,ctx.currentTime);
+      g1.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.55);
+      o1.start();o1.stop(ctx.currentTime+.6);
+      const o2=ctx.createOscillator(),g2=ctx.createGain();
+      o2.connect(g2);g2.connect(ctx.destination);
+      o2.type='square';o2.frequency.value=120;
+      g2.gain.setValueAtTime(.15,ctx.currentTime+.1);
+      g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);
+      o2.start(ctx.currentTime+.1);o2.stop(ctx.currentTime+.55);
+    }
+  }catch(e){}
 }
 function showFeedback(txt,ok){
   const el=document.getElementById('feedback');el.textContent=txt;
