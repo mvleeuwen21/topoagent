@@ -126,19 +126,44 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   aspect-ratio:882/1024;
 }
 .map-img{width:100%;height:100%;display:block;object-fit:contain;object-position:center}
+/* Layer matching the ACTUAL rendered image rect (letterboxing compensated in JS) */
+.map-content-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
 .map-overlay{position:absolute;inset:0;pointer-events:none}
 
-/* Map legend (game screen only — lives inside #map-stage) */
+/* Map legend (game screen — top-left to avoid overlapping bottom markers) */
+.map-legend-stack{
+  position:absolute;top:8px;left:8px;z-index:9;display:flex;flex-direction:column;align-items:flex-start;
+  gap:4px;max-width:calc(100% - 16px);pointer-events:none;
+}
+.map-legend-toggle{
+  pointer-events:auto;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:10px;text-transform:uppercase;letter-spacing:.5px;
+  padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(26,42,58,.94);color:var(--yellow);box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+.map-legend-toggle:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+@media (min-width:480px){
+  .map-legend-toggle{display:none!important;}
+}
 .map-legend{
-  position:absolute;bottom:8px;right:8px;z-index:8;
   pointer-events:none;
   background:rgba(26,42,58,.88);border:1px solid var(--border);border-radius:8px;
   padding:7px 10px 8px;box-shadow:0 2px 8px rgba(0,0,0,.35);
   font-size:11px;font-weight:700;line-height:1.35;color:var(--text);
-  max-width:min(160px,calc(100% - 16px));
+  max-width:min(168px,calc(100vw - 32px));
+  transition:opacity .2s,transform .2s,max-height .2s;
+}
+.map-legend.is-collapsed{
+  opacity:0;visibility:hidden;max-height:0;padding:0 10px;margin:0;overflow:hidden;transform:translateY(-4px);border-width:0;
 }
 .map-legend-row{display:flex;align-items:center;gap:7px;margin-top:3px}
 .map-legend-row:first-child{margin-top:0}
+@media (max-width:479px){
+  .map-legend-toggle{display:inline-block}
+}
+@media (min-width:480px){
+  .map-legend.is-collapsed{opacity:1;visibility:visible;max-height:none;padding:7px 10px 8px;transform:none;border-width:1px}
+}
 .map-legend-dot{
   width:11px;height:11px;border-radius:50%;flex-shrink:0;
   border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);
@@ -395,27 +420,34 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
     <div class="map-stage" id="map-stage">
       <img src="map.png" alt="Handgetekende kaart Flevoland en Utrecht" class="map-img" id="map-img" width="882" height="1024">
 
-    <!-- Clickable marker overlay -->
-    <div class="map-overlay" id="map-overlay"></div>
+    <div class="map-content-layer" id="map-content-layer">
+      <!-- Clickable marker overlay -->
+      <div class="map-overlay" id="map-overlay"></div>
 
-    <!-- Roblox character -->
-    <div id="roblox-char">
-      <div class="char-inner">
-        <div class="char-head"></div>
-        <div class="char-body"></div>
+      <!-- Roblox character (same coords as markers) -->
+      <div id="roblox-char">
+        <div class="char-inner">
+          <div class="char-head"></div>
+          <div class="char-body"></div>
+        </div>
       </div>
+
+      <!-- Feedback text -->
+      <div class="feedback fb-ok" id="fb-ok">NICE! 🎉</div>
+      <div class="feedback fb-fail" id="fb-fail">FOUT! 💀</div>
     </div>
 
-    <!-- Feedback text -->
-    <div class="feedback fb-ok" id="fb-ok">NICE! 🎉</div>
-    <div class="feedback fb-fail" id="fb-fail">FOUT! 💀</div>
-
-    <!-- Marker colors (gameplay only — hidden when not on game screen) -->
-    <div class="map-legend" id="map-legend" aria-label="Legenda markerkleuren">
-      <div class="map-legend-row"><span class="map-legend-dot leg-city" aria-hidden="true"></span><span>🔴 Rood = Stad</span></div>
-      <div class="map-legend-row"><span class="map-legend-dot leg-province" aria-hidden="true"></span><span>🟢 Groen = Provincie</span></div>
-      <div class="map-legend-row"><span class="map-legend-dot leg-area" aria-hidden="true"></span><span>🟣 Paars = Gebied</span></div>
-      <div class="map-legend-row"><span class="map-legend-dot leg-river" aria-hidden="true"></span><span>🔵 Blauw = Rivier</span></div>
+    <!-- Marker colors legend: top-left; collapsible narrow viewports -->
+    <div class="map-legend-stack">
+      <button type="button" class="map-legend-toggle" id="legend-toggle" aria-expanded="false" aria-controls="map-legend">
+        📋 Legenda
+      </button>
+      <div class="map-legend" id="map-legend" aria-label="Legenda markerkleuren">
+        <div class="map-legend-row"><span class="map-legend-dot leg-city" aria-hidden="true"></span><span>🔴 Rood = Stad</span></div>
+        <div class="map-legend-row"><span class="map-legend-dot leg-province" aria-hidden="true"></span><span>🟢 Groen = Provincie</span></div>
+        <div class="map-legend-row"><span class="map-legend-dot leg-area" aria-hidden="true"></span><span>🟣 Paars = Gebied</span></div>
+        <div class="map-legend-row"><span class="map-legend-dot leg-river" aria-hidden="true"></span><span>🔵 Blauw = Rivier</span></div>
+      </div>
     </div>
     </div>
   </div>
@@ -449,9 +481,11 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   </div>
   <div class="map-wrap" id="cal-map-wrap">
     <div class="map-stage" id="cal-map-stage">
-      <img src="map.png" alt="Kaart" class="map-img" width="882" height="1024">
-      <div class="map-overlay" id="cal-map-overlay"></div>
-      <div class="cal-preview" id="cal-preview"></div>
+      <img src="map.png" alt="Kaart" class="map-img" id="cal-map-img" width="882" height="1024">
+      <div class="map-content-layer" id="cal-content-layer">
+        <div class="map-overlay" id="cal-map-overlay"></div>
+        <div class="cal-preview" id="cal-preview"></div>
+      </div>
     </div>
   </div>
   <div class="cal-actions">
@@ -562,7 +596,8 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
 <script src="config.js"></script>
 <script>
 // ===== LOCATION DATA =====
-// x/y = % positie op handgetekende kaart (map.png, 882×1024)
+// x/y = % positie op de zichtbare kaart (handgetekende map.png, intrinsic 882×1024 —
+// geplaatst t.o.v. het door object-fit getoonde deel, niet v.h. grijze letterbox-frame)
 // category: city | province | area | river
 // x/y = klikpunt op de kaart (alle types: ronde dot)
 const CATEGORY_LABELS = {
@@ -737,6 +772,113 @@ function getActiveLocations() {
   });
 }
 let cfg = loadCfg();
+
+// ===== MAP IMAGE LAYOUT (object-fit:contain → markerlaag volgt echte drawable) =====
+const MAP_NATURAL = { w: 882, h: 1024 };
+
+function containedBoxInSizedBox(cw, ch, nw, nh) {
+  nw = Math.max(1, nw);
+  nh = Math.max(1, nh);
+  cw = Math.max(1, cw);
+  ch = Math.max(1, ch);
+  const ir = nw / nh;
+  const cr = cw / ch;
+  let left, top, width, height;
+  if (ir > cr) {
+    width = cw;
+    height = cw / ir;
+    left = 0;
+    top = (ch - height) / 2;
+  } else {
+    height = ch;
+    width = ch * ir;
+    top = 0;
+    left = (cw - width) / 2;
+  }
+  return { left, top, width, height };
+}
+
+/** Align #map-content-layer / #cal-content-layer met getoonde map.png (contain letterboxing kompensatie). */
+function syncMapContentLayer(stageEl, imgEl, layerEl) {
+  if (!stageEl || !imgEl || !layerEl) return;
+  const nw = imgEl.naturalWidth > 0 ? imgEl.naturalWidth : MAP_NATURAL.w;
+  const nh = imgEl.naturalHeight > 0 ? imgEl.naturalHeight : MAP_NATURAL.h;
+  const cw = imgEl.clientWidth;
+  const ch = imgEl.clientHeight;
+  if (!cw || !ch) return;
+  const b = containedBoxInSizedBox(cw, ch, nw, nh);
+  const sw = stageEl.clientWidth;
+  const sh = stageEl.clientHeight;
+  if (!sw || !sh) return;
+  const ix = imgEl.offsetLeft;
+  const iy = imgEl.offsetTop;
+  layerEl.style.left = ((ix + b.left) / sw * 100) + '%';
+  layerEl.style.top = ((iy + b.top) / sh * 100) + '%';
+  layerEl.style.width = (b.width / sw * 100) + '%';
+  layerEl.style.height = (b.height / sh * 100) + '%';
+}
+
+function layoutMapLayers() {
+  syncMapContentLayer(document.getElementById('map-stage'), document.getElementById('map-img'), document.getElementById('map-content-layer'));
+  syncMapContentLayer(document.getElementById('cal-map-stage'), document.getElementById('cal-map-img'), document.getElementById('cal-content-layer'));
+}
+
+let mapResizeObserver = null;
+function onMapViewportResize() {
+  requestAnimationFrame(() => {
+    layoutMapLayers();
+    applyLegendResponsive();
+  });
+}
+function bindMapLayoutSync() {
+  layoutMapLayers();
+  applyLegendResponsive();
+  const imgs = ['map-img', 'cal-map-img'].map(id => document.getElementById(id)).filter(Boolean);
+  imgs.forEach(img => {
+    if (img.complete) layoutMapLayers();
+    else img.addEventListener('load', () => layoutMapLayers(), { once: true });
+  });
+  window.addEventListener('resize', onMapViewportResize);
+  if (typeof ResizeObserver !== 'undefined') {
+    mapResizeObserver = mapResizeObserver || new ResizeObserver(onMapViewportResize);
+    ['map-stage', 'cal-map-stage', 'map-wrap', 'cal-map-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) mapResizeObserver.observe(el);
+    });
+  }
+}
+
+// ===== LEGEND (<480px: inklapbaar, standaard dicht voor maximale kaartruimte) =====
+const legendMobileState = { expanded: false };
+
+function bindLegendToggle() {
+  const btn = document.getElementById('legend-toggle');
+  const leg = document.getElementById('map-legend');
+  if (!btn || !leg) return;
+  btn.addEventListener('click', () => {
+    if (!window.matchMedia('(max-width:479px)').matches) return;
+    legendMobileState.expanded = !legendMobileState.expanded;
+    applyLegendResponsive();
+  });
+}
+
+function applyLegendResponsive() {
+  const leg = document.getElementById('map-legend');
+  const btn = document.getElementById('legend-toggle');
+  if (!leg || !btn) return;
+  const narrow = window.matchMedia('(max-width:479px)').matches;
+  if (!narrow) {
+    legendMobileState.expanded = false;
+    leg.classList.remove('is-collapsed');
+    btn.setAttribute('aria-expanded', 'true');
+    btn.textContent = '📋 Legenda';
+    return;
+  }
+  btn.setAttribute('aria-expanded', String(legendMobileState.expanded));
+  leg.classList.toggle('is-collapsed', !legendMobileState.expanded);
+  btn.textContent = legendMobileState.expanded ? '📕 Sluit legenda' : '📋 Legenda';
+}
+
 let gs = {};
 
 function resetGs() {
@@ -796,9 +938,13 @@ function startGame() {
   updateScore();
 
   showScreen('screen-game');
-  buildMarkers();
-  initChar();
-  nextQuestion();
+  requestAnimationFrame(() => {
+    layoutMapLayers();
+    buildMarkers();
+    initChar();
+    nextQuestion();
+    applyLegendResponsive();
+  });
 }
 
 function shuffle(arr) {
@@ -1363,8 +1509,11 @@ function startCalibration() {
   document.getElementById('cal-export-panel').classList.remove('show');
   showScreen('screen-calibrate');
   bindCalMapClick();
-  renderCalMarkers();
-  updateCalUI();
+  requestAnimationFrame(() => {
+    layoutMapLayers();
+    renderCalMarkers();
+    updateCalUI();
+  });
 }
 
 function bindCalMapClick() {
@@ -1374,12 +1523,27 @@ function bindCalMapClick() {
   cal.clickBound = true;
 }
 
+function clientPointToMapPercent(imgEl, clientX, clientY) {
+  if (!imgEl) return null;
+  const nw = imgEl.naturalWidth > 0 ? imgEl.naturalWidth : MAP_NATURAL.w;
+  const nh = imgEl.naturalHeight > 0 ? imgEl.naturalHeight : MAP_NATURAL.h;
+  const ir = imgEl.getBoundingClientRect();
+  const b = containedBoxInSizedBox(ir.width, ir.height, nw, nh);
+  const lx = clientX - ir.left - b.left;
+  const ly = clientY - ir.top - b.top;
+  if (lx < 0 || ly < 0 || lx > b.width || ly > b.height) return null;
+  return {
+    x: (lx / b.width) * 100,
+    y: (ly / b.height) * 100
+  };
+}
+
 function onCalMapClick(e) {
-  const stage = document.getElementById('cal-map-stage');
-  const rect = stage.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  if (x < 0 || x > 100 || y < 0 || y > 100) return;
+  const img = document.getElementById('cal-map-img');
+  const pt = clientPointToMapPercent(img, e.clientX, e.clientY);
+  if (!pt) return;
+  const x = pt.x;
+  const y = pt.y;
 
   const loc = getCalLoc();
   if (!loc) return;
@@ -1471,10 +1635,13 @@ function showPositionsExport(focusImport) {
   const panel = document.getElementById('cal-export-panel');
   panel.classList.add('show');
   showScreen('screen-calibrate');
-  setTimeout(() => {
-    const target = focusImport ? document.getElementById('cal-import-ta') : panel;
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 120);
+  requestAnimationFrame(() => {
+    layoutMapLayers();
+    setTimeout(() => {
+      const target = focusImport ? document.getElementById('cal-import-ta') : panel;
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 120);
+  });
 }
 
 function calCopyJson() {
@@ -1519,6 +1686,8 @@ scoresLoadPromise = loadScoresFromCloud();
       if (backup) applyPositionsList(parsePositionsJson(backup));
     } catch (e) {}
   }
+  bindMapLayoutSync();
+  bindLegendToggle();
   initStart();
 })();
 </script>
