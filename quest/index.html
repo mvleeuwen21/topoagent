@@ -539,9 +539,9 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
     </div>
     <div id="admin-step-menu" class="admin-hidden">
       <h3>⚙️ Admin menu</h3>
-      <p>Timer: <strong id="admin-info-timer"></strong>s · Categorieën: <strong id="admin-info-cats"></strong> (1=aan, 0=uit)</p>
+      <p>Timer: <strong id="admin-info-timer"></strong>s · Auto hint (na idle): <strong id="admin-info-hint-delay"></strong>s · Categorieën: <strong id="admin-info-cats"></strong> (1=aan, 0=uit)</p>
       <div class="admin-menu">
-        <button type="button" class="btn btn-blue" onclick="adminShowTimer()">1 — Timer aanpassen</button>
+        <button type="button" class="btn btn-blue" onclick="adminShowTimer()">1 — Timer &amp; auto-hint</button>
         <button type="button" class="btn btn-blue" onclick="adminShowCategories()">2 — Categorieën aan/uit</button>
         <button type="button" class="btn btn-yellow" onclick="adminStartCalibrate()">3 — Kaart kalibreren</button>
         <button type="button" class="btn btn-yellow" onclick="adminShowExport()">4 — Posities exporteren</button>
@@ -552,10 +552,16 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
       </div>
     </div>
     <div id="admin-step-timer" class="admin-hidden">
-      <h3>⏱ Timer</h3>
+      <h3>⏱ Timer &amp; auto-hint</h3>
       <div class="field">
         <label for="admin-timer-input">Seconden per ronde (5–120)</label>
         <input id="admin-timer-input" type="number" min="5" max="120" step="1"
+          onkeydown="if(event.key==='Enter')adminSaveTimer()">
+      </div>
+      <div class="field">
+        <label for="admin-hint-delay-input">Automatische hint na stilzwijgen (sec, 3–120)</label>
+        <input id="admin-hint-delay-input" type="number" min="3" max="120" step="1"
+          placeholder="10"
           onkeydown="if(event.key==='Enter')adminSaveTimer()">
       </div>
       <div class="admin-actions">
@@ -593,6 +599,13 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
 
 <div id="toast"></div>
 
+<!-- Fallback JSONBin voor GitHub Pages: quest/config.js staat niet in git (zie .gitignore). -->
+<script>
+window.TOPO_QUEST_JSONBIN_FALLBACK = {
+  binId: '6a097b9b250b1311c3619051',
+  accessKey: '$2a$10$BXlMQsYnYFaJIK17.FPkB.oMpWUr9dK29V1.T01/bTI61xcJiA1H2'
+};
+</script>
 <script src="config.js"></script>
 <script>
 // ===== LOCATION DATA =====
@@ -672,6 +685,7 @@ const SK = 'topo_quest_cfg', QK = 'topo_quest_scores', PK = 'topo_quest_position
 function defaultCfg() {
   return {
     timerSeconds: 15,
+    hintAutoDelaySeconds: 10,
     adminPassword: 'quest123',
     categories: { ...DEFAULT_CATEGORIES },
     locations: DEFAULTS.map(d => ({ ...d, zone: d.zone ? { ...d.zone } : undefined }))
@@ -680,6 +694,9 @@ function defaultCfg() {
 
 function mergeCfgFromDefaults(s) {
   if (!s.categories) s.categories = { ...DEFAULT_CATEGORIES };
+  if (typeof s.hintAutoDelaySeconds !== 'number' || s.hintAutoDelaySeconds < 3 || s.hintAutoDelaySeconds > 120) {
+    s.hintAutoDelaySeconds = 10;
+  }
   const list = Array.isArray(s.locations) ? s.locations : [];
   const byId = new Map(list.map(l => [l.id, l]));
   DEFAULTS.forEach(d => {
@@ -1037,10 +1054,18 @@ function nextQuestion() {
   gs.questionStart = Date.now();
 
   if (loc.hints && loc.hints.length) {
-    gs.hintTimer = setTimeout(() => showAutoHint(loc), 5000);
+    scheduleAutoHint(loc);
   }
 
   startRoundTimer();
+}
+
+/** Auto-hint (tekst + pulse): pas na N sec zonder reactie op deze vraag; fout antwoord reset timer. Hint-knop blijft direct. */
+function scheduleAutoHint(loc) {
+  clearTimeout(gs.hintTimer);
+  if (gs.answered || !loc || !loc.hints || !loc.hints.length || gs.hintShown >= 2) return;
+  const sec = Math.min(120, Math.max(3, Number(cfg.hintAutoDelaySeconds) || 10));
+  gs.hintTimer = setTimeout(() => showAutoHint(loc), sec * 1000);
 }
 
 function showAutoHint(loc) {
@@ -1052,7 +1077,7 @@ function showAutoHint(loc) {
     const m = markerEls[loc.id];
     if (m) { m.classList.add('hint-pulse'); setTimeout(() => m.classList.remove('hint-pulse'), 2000); }
     gs.hintShown++;
-    if (gs.hintShown < 2) gs.hintTimer = setTimeout(() => showAutoHint(loc), 6000);
+    if (gs.hintShown < 2) scheduleAutoHint(loc);
   }
 }
 
@@ -1097,6 +1122,7 @@ function onMarkerClick(id) {
     animChar('fail');
     playSound('fail');
     showFeedback('fail', 'FOUT! 💀');
+    scheduleAutoHint(loc);
     setTimeout(() => {
       const wrongLoc = cfg.locations.find(l => l.id === id);
       const cat = wrongLoc ? (wrongLoc.category || 'city') : 'city';
@@ -1180,7 +1206,10 @@ let scoresLoadPromise = null;
 
 function getJsonBinCfg() {
   const c = window.TOPO_QUEST_JSONBIN;
-  return (c && c.binId && c.accessKey) ? c : null;
+  const fb = window.TOPO_QUEST_JSONBIN_FALLBACK;
+  if (c && c.binId && c.accessKey) return c;
+  if (fb && fb.binId && fb.accessKey) return fb;
+  return null;
 }
 
 function normalizeScores(arr) {
@@ -1237,15 +1266,18 @@ function getScores() {
 async function loadScoresFromCloud() {
   if (!getJsonBinCfg()) {
     scoresCache = readLocalScores();
+    console.info('[TOPO_QUEST scores] Top 10 laden uit localStorage (geen JSONBin).');
     return scoresCache;
   }
   try {
     const remote = await fetchRemoteScores();
     scoresCache = remote;
     writeLocalScores(remote);
+    console.info('[TOPO_QUEST scores] Top 10 gesynchroniseerd van JSONBin (' + remote.length + ' records).');
     return remote;
   } catch (e) {
     scoresCache = readLocalScores();
+    console.warn('[TOPO_QUEST scores] JSONBin laden mislukt — fallback localStorage.', e);
     return scoresCache;
   }
 }
@@ -1254,8 +1286,18 @@ async function persistScores(arr) {
   arr = normalizeScores(arr);
   scoresCache = arr;
   writeLocalScores(arr);
-  if (!getJsonBinCfg()) return;
-  try { await pushRemoteScores(arr); } catch (e) {}
+  const jb = getJsonBinCfg();
+  if (!jb) {
+    console.info('[TOPO_QUEST scores] Alleen lokale opslag — geen geldige JSONBin-config.');
+    return;
+  }
+  try {
+    const ok = await pushRemoteScores(arr);
+    if (ok) console.info('[TOPO_QUEST scores] JSONBin-sync OK (' + arr.length + ' records).');
+    else console.warn('[TOPO_QUEST scores] JSONBin PUT geweigerd of mislukt (status niet OK); lokaal opgeslagen.');
+  } catch (e) {
+    console.warn('[TOPO_QUEST scores] JSONBin netwerkfout; scores blijven lokaal beschikbaar.', e);
+  }
 }
 
 function saveScore(name, score, ok) {
@@ -1387,27 +1429,38 @@ function adminSubmitPassword() {
 
 function adminShowMenu() {
   document.getElementById('admin-info-timer').textContent = cfg.timerSeconds;
+  document.getElementById('admin-info-hint-delay').textContent = cfg.hintAutoDelaySeconds;
   document.getElementById('admin-info-cats').textContent = categoryFlagsToString();
   adminShowStep('admin-step-menu');
 }
 
 function adminShowTimer() {
   const inp = document.getElementById('admin-timer-input');
+  const hin = document.getElementById('admin-hint-delay-input');
   inp.value = cfg.timerSeconds;
+  if (hin) hin.value = cfg.hintAutoDelaySeconds;
   adminShowStep('admin-step-timer');
   adminFocus('admin-timer-input');
 }
 
 function adminSaveTimer() {
   const sec = +document.getElementById('admin-timer-input').value;
+  const hintDelayInput = document.getElementById('admin-hint-delay-input');
+  let hd = hintDelayInput ? +hintDelayInput.value : NaN;
   if (!sec || isNaN(sec) || sec < 5 || sec > 120) {
-    toast('Kies een getal tussen 5 en 120', true);
+    toast('Timer: kies een getal tussen 5 en 120', true);
+    return;
+  }
+  if (isNaN(hd)) hd = typeof cfg.hintAutoDelaySeconds === 'number' ? cfg.hintAutoDelaySeconds : 10;
+  if (hd < 3 || hd > 120) {
+    toast('Auto-hint vertraging: kies tussen 3 en 120 seconden', true);
     return;
   }
   cfg.timerSeconds = sec;
+  cfg.hintAutoDelaySeconds = hd;
   saveCfg();
   initStart();
-  toast('Timer ingesteld op ' + sec + 's');
+  toast('Timer ' + sec + 's · auto-hint na ' + hd + 's stilzwijgen');
   adminShowMenu();
 }
 
