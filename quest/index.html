@@ -9,7 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f1923;--card:#1a2a3a;--card2:#0d2035;
-  --red:#e8192c;--blue:#0055a4;--yellow:#ffb800;--green:#00a550;
+  --red:#e8192c;--blue:#0055a4;--yellow:#ffb800;--green:#00a550;--purple:#9b30d4;
   --border:#2a3a5a;--text:#e8eaf0;--text-dim:#7a8ab0;
   --shadow:0 4px 0 rgba(0,0,0,0.5);
 }
@@ -37,12 +37,12 @@ h1,h2,h3{font-family:'Nunito',sans-serif;font-weight:900}
 .btn-sm{font-size:12px;padding:8px 16px}
 .btn:disabled{opacity:.4;cursor:not-allowed;top:0}
 
-input,select{
+input,select,textarea{
   background:var(--card2);border:2px solid var(--border);border-radius:8px;
   color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;
   padding:10px 14px;outline:none;width:100%;transition:border .2s;
 }
-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,85,164,.2)}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,85,164,.2)}
 label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);display:block;margin-bottom:5px;text-transform:uppercase}
 .field{margin-bottom:14px}
 
@@ -118,24 +118,51 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
 .map-wrap{
   position:relative;width:100%;flex:1;min-height:0;
   border-radius:10px;overflow:hidden;box-shadow:var(--shadow);
-  border:2px solid var(--border);background:#5a8ab0;
+  border:2px solid var(--border);background:#d8d4cc;
+  display:flex;align-items:center;justify-content:center;
 }
-.map-svg{width:100%;height:100%;display:block}
+.map-stage{
+  position:relative;height:100%;width:auto;max-width:100%;max-height:100%;
+  aspect-ratio:882/1024;
+}
+.map-img{width:100%;height:100%;display:block;object-fit:contain;object-position:center}
 .map-overlay{position:absolute;inset:0;pointer-events:none}
+
+/* Map legend (game screen only — lives inside #map-stage) */
+.map-legend{
+  position:absolute;bottom:8px;right:8px;z-index:8;
+  pointer-events:none;
+  background:rgba(26,42,58,.88);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px 8px;box-shadow:0 2px 8px rgba(0,0,0,.35);
+  font-size:11px;font-weight:700;line-height:1.35;color:var(--text);
+  max-width:min(160px,calc(100% - 16px));
+}
+.map-legend-row{display:flex;align-items:center;gap:7px;margin-top:3px}
+.map-legend-row:first-child{margin-top:0}
+.map-legend-dot{
+  width:11px;height:11px;border-radius:50%;flex-shrink:0;
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);
+  box-sizing:border-box;
+}
+.map-legend-dot.leg-city{background:var(--red)}
+.map-legend-dot.leg-province{background:var(--green)}
+.map-legend-dot.leg-area{background:var(--purple)}
+.map-legend-dot.leg-river{background:var(--blue)}
 
 /* Markers */
 .marker{
   position:absolute;width:18px;height:18px;border-radius:50%;
   background:var(--red);border:3px solid #fff;
+  box-sizing:border-box;
   cursor:pointer;transform:translate(-50%,-50%);z-index:3;
   box-shadow:0 2px 8px rgba(0,0,0,.5);transition:transform .15s;
   pointer-events:all;
 }
-.marker:hover{transform:translate(-50%,-50%) scale(1.5)}
-.marker.hint-pulse{animation:mhint .7s infinite !important;transition:none !important;z-index:10}
-@keyframes mhint{
-  0%,100%{box-shadow:0 0 0 0 rgba(255,184,0,.5);transform:translate(-50%,-50%) scale(1.3)}
-  50%{box-shadow:0 0 0 14px rgba(255,184,0,0);transform:translate(-50%,-50%) scale(1.8)}
+.marker-city:hover{transform:translate(-50%,-50%) scale(1.5)}
+.marker-city.hint-pulse{animation:mhint-city .7s infinite !important;transition:none !important;z-index:10}
+@keyframes mhint-city{
+  0%,100%{box-shadow:0 0 0 0 rgba(232,25,44,.55);transform:translate(-50%,-50%) scale(1.3)}
+  50%{box-shadow:0 0 0 14px rgba(232,25,44,0);transform:translate(-50%,-50%) scale(1.8)}
 }
 .marker.correct{background:var(--green);animation:mcorrect .5s forwards;pointer-events:none}
 @keyframes mcorrect{
@@ -149,6 +176,30 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   25%{transform:translate(calc(-50% - 8px),-50%)}
   75%{transform:translate(calc(-50% + 8px),-50%)}
 }
+.marker-city{width:18px;height:18px;background:var(--red);border-color:#fff}
+.marker-province{width:18px;height:18px;background:var(--green);border-color:#fff}
+.marker-province:hover{transform:translate(-50%,-50%) scale(1.5);box-shadow:0 0 10px rgba(0,165,80,.45)}
+.marker-area{width:18px;height:18px;background:var(--purple);border-color:#fff}
+.marker-area:hover{transform:translate(-50%,-50%) scale(1.5);box-shadow:0 0 10px rgba(155,48,212,.45)}
+.marker-river{width:18px;height:18px;background:var(--blue);border-color:#fff}
+.marker-river:hover{transform:translate(-50%,-50%) scale(1.5);box-shadow:0 0 10px rgba(0,85,164,.45)}
+.marker-province.hint-pulse,.marker-area.hint-pulse,.marker-river.hint-pulse{transition:none !important;z-index:10}
+@keyframes mhint-province{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,165,80,.55);transform:translate(-50%,-50%) scale(1.3)}
+  50%{box-shadow:0 0 0 14px rgba(0,165,80,0);transform:translate(-50%,-50%) scale(1.8)}
+}
+@keyframes mhint-river{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,85,164,.55);transform:translate(-50%,-50%) scale(1.3)}
+  50%{box-shadow:0 0 0 14px rgba(0,85,164,0);transform:translate(-50%,-50%) scale(1.8)}
+}
+@keyframes mhint-area{
+  0%,100%{box-shadow:0 0 0 0 rgba(155,48,212,.55);transform:translate(-50%,-50%) scale(1.3)}
+  50%{box-shadow:0 0 0 14px rgba(155,48,212,0);transform:translate(-50%,-50%) scale(1.8)}
+}
+.marker-province.hint-pulse{animation:mhint-province .7s infinite !important}
+.marker-river.hint-pulse{animation:mhint-river .7s infinite !important}
+.marker-area.hint-pulse{animation:mhint-area .7s infinite !important}
+.mission-cat{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:2px}
 
 /* Roblox character */
 #roblox-char{
@@ -218,6 +269,68 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
 .t10-pts{font-weight:900;font-size:15px;color:var(--yellow)}
 .t10-date{font-size:12px;color:var(--text-dim);font-weight:600}
 .t10-empty{text-align:center;padding:32px;color:var(--text-dim);font-weight:700}
+
+/* ===== CALIBRATE SCREEN ===== */
+#screen-calibrate{align-items:center;gap:12px;max-width:1400px;margin:0 auto;width:100%;min-height:100vh}
+.cal-hdr{width:100%;text-align:center}
+.cal-hdr h2{font-size:clamp(18px,4vw,28px);margin-bottom:6px}
+.cal-step{font-size:15px;font-weight:700;color:var(--yellow)}
+.cal-step span{color:var(--text);font-weight:900}
+.cal-hint{font-size:12px;color:var(--text-dim);font-weight:700;margin-top:4px}
+#cal-map-wrap{flex:1;min-height:280px;width:100%;cursor:crosshair}
+#cal-map-wrap .map-overlay{pointer-events:none}
+.cal-preview{
+  position:absolute;width:22px;height:22px;border-radius:50%;
+  background:var(--red);border:3px solid #fff;transform:translate(-50%,-50%);
+  box-shadow:0 0 12px rgba(232,25,44,.8);z-index:5;pointer-events:none;display:none;
+}
+.cal-preview.show{display:block}
+.cal-preview.zone-marker{background:var(--green);border-color:#fff}
+.cal-preview.area-marker{background:var(--purple);border-color:#fff}
+.cal-preview.river-marker{background:var(--blue);border-color:#fff}
+.marker.cal-current{opacity:1!important;z-index:6;box-shadow:0 0 0 3px var(--yellow),0 2px 8px rgba(0,0,0,.5)!important}
+.cal-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%}
+.cal-export{
+  width:100%;max-width:560px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:12px;display:none;
+}
+.cal-export.show{display:block}
+.cal-export label{margin-bottom:8px}
+.cal-export textarea{
+  min-height:120px;font-size:11px;font-family:Consolas,monospace;
+  resize:vertical;margin-bottom:8px;
+}
+#cal-import-ta{min-height:72px}
+
+/* Admin modal */
+#admin-hotspot{
+  position:fixed;bottom:10px;right:10px;z-index:9000;
+  width:52px;height:52px;cursor:pointer;border-radius:10px;
+  background:rgba(26,42,58,.75);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;opacity:.55;transition:opacity .2s,background .2s;
+}
+#admin-hotspot:hover{opacity:1;background:var(--card)}
+#admin-hotspot::after{content:'⚙';line-height:1}
+#admin-modal{
+  position:fixed;inset:0;z-index:10001;display:none;
+  align-items:center;justify-content:center;padding:16px;
+  background:rgba(0,0,0,.65);
+}
+#admin-modal.open{display:flex}
+.admin-panel{
+  background:var(--card);border:2px solid var(--border);border-radius:14px;
+  padding:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.admin-panel h3{font-size:18px;margin-bottom:14px;color:var(--yellow)}
+.admin-panel p{font-size:13px;color:var(--text-dim);font-weight:700;margin-bottom:12px;line-height:1.45}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.admin-actions .btn{flex:1;min-width:100px}
+.admin-menu{display:flex;flex-direction:column;gap:8px}
+.admin-menu .btn{width:100%;text-align:left;font-size:13px;padding:10px 14px}
+.admin-import-ta{min-height:100px;font-size:12px;font-family:Consolas,monospace;font-weight:400}
+.admin-hidden{display:none!important}
 </style>
 </head>
 <body>
@@ -227,7 +340,7 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   <div class="logo-wrap">
     <div class="logo-emoji">🎮</div>
     <div class="logo-title">TOPO QUEST</div>
-    <div class="logo-sub">Flevoland &amp; Utrecht</div>
+    <div class="logo-sub">Steden · Provincies · Gebied · Rivieren</div>
   </div>
   <div class="start-card">
     <div class="field">
@@ -236,14 +349,15 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
         onkeydown="if(event.key==='Enter')startGame()">
     </div>
     <div class="start-info">
-      <span id="loc-count">0</span> steden &nbsp;·&nbsp; <span id="timer-info">15</span> sec per ronde
+      <span id="loc-count">0</span> locaties
+      <span id="loc-breakdown" style="display:block;font-size:11px;margin-top:4px;line-height:1.5"></span>
+      <span style="display:block;margin-top:6px"><span id="timer-info">15</span> sec per ronde</span>
     </div>
     <div class="start-btns">
       <button class="btn btn-red" onclick="startGame()">🎮 SPEEL!</button>
       <button class="btn btn-blue btn-sm" onclick="showScreen('screen-top10');loadTop10()">🏆 Top 10</button>
     </div>
   </div>
-  <div id="admin-hotspot" style="position:fixed;bottom:0;right:0;width:40px;height:40px;opacity:0;cursor:pointer" onclick="showAdminPrompt()"></div>
 </div>
 
 <!-- ===== GAME SCREEN ===== -->
@@ -266,6 +380,7 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   </div>
 
   <div class="mission-panel">
+    <div class="mission-cat" id="g-mission-cat"></div>
     <div class="mission-lbl">🎯 Missie</div>
     <div class="mission-txt" id="g-mission">—</div>
   </div>
@@ -277,67 +392,8 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   </div>
 
   <div class="map-wrap" id="map-wrap">
-    <!-- SVG Map: Flevoland & Utrecht region -->
-    <svg id="map-svg" viewBox="0 0 800 900" preserveAspectRatio="none"
-         xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
-
-      <!-- Water background -->
-      <rect width="800" height="900" fill="#7aafc8"/>
-
-      <!-- NW corner land (Noord-Holland hints) -->
-      <polygon points="0,0 195,0 175,85 100,175 0,220" fill="#c8c8b8" stroke="#9a9a8a" stroke-width="1.5"/>
-
-      <!-- NE corner land -->
-      <polygon points="710,0 800,0 800,140 740,110" fill="#c8c8b8" stroke="#9a9a8a" stroke-width="1.5"/>
-
-      <!-- Noordoostpolder (Emmeloord) -->
-      <polygon points="385,10 655,8 725,52 728,208 658,252 525,264 418,228 383,166 372,85"
-               fill="#b8d8b0" stroke="#7a9a7a" stroke-width="2"/>
-
-      <!-- Main Flevoland polder (Lelystad + Almere) -->
-      <polygon points="195,148 432,90 568,142 582,290 518,398 405,474 292,488 182,394 192,265"
-               fill="#c0dab8" stroke="#7a9a7a" stroke-width="2"/>
-
-      <!-- Oostvaardersplassen (nature reserve) -->
-      <polygon points="262,190 348,172 378,236 316,280 252,272"
-               fill="#8ab88a" stroke="#5a885a" stroke-width="1.2" opacity="0.9"/>
-
-      <!-- Right-side land (Gelderland/Overijssel edge) -->
-      <polygon points="728,208 800,178 800,900 668,900 608,758 642,588 688,438 730,312"
-               fill="#c8c8b8" stroke="#9a9a8a" stroke-width="1.5"/>
-
-      <!-- Utrecht province -->
-      <polygon points="72,492 498,460 562,528 542,690 432,770 168,778 42,728 48,600"
-               fill="#e8e2b8" stroke="#a89850" stroke-width="2"/>
-
-      <!-- Bottom land -->
-      <polygon points="0,778 800,792 800,900 0,900" fill="#c8c8b8" stroke="#9a9a8a" stroke-width="1.5"/>
-
-      <!-- Left land strip -->
-      <polygon points="0,220 98,175 138,345 108,485 0,530" fill="#c8c8b8" stroke="#9a9a8a" stroke-width="1.5"/>
-
-      <!-- Randmeren (thin water between Flevoland east and mainland) -->
-      <path d="M 582,290 Q 620,360 648,440 L 688,438" stroke="#6898b8" stroke-width="10" fill="none" opacity="0.7"/>
-
-      <!-- Amsterdam-Rijnkanaal -->
-      <path d="M 298,476 Q 278,565 262,672 Q 250,730 238,775" stroke="#5888a8" stroke-width="5" fill="none"/>
-
-      <!-- Lek -->
-      <path d="M 42,728 Q 158,745 258,734 Q 338,726 405,734" stroke="#5888a8" stroke-width="5" fill="none"/>
-
-      <!-- Neder-Rijn -->
-      <path d="M 378,736 Q 482,720 582,726 Q 635,730 695,720" stroke="#5888a8" stroke-width="5" fill="none"/>
-
-      <!-- Province labels -->
-      <text x="492" y="168" font-family="Georgia,serif" font-size="19" font-weight="bold" fill="#3a5a3a" opacity="0.75">FLEVOLAND</text>
-      <text x="172" y="628" font-family="Georgia,serif" font-size="19" font-weight="bold" fill="#6a5a1a" opacity="0.75">UTRECHT</text>
-
-      <!-- Feature labels -->
-      <text x="265" y="225" font-family="Georgia,serif" font-size="11" fill="#2a5a2a" font-style="italic" opacity="0.9">Oostvaardersplassen</text>
-      <text x="148" y="752" font-family="Georgia,serif" font-size="10" fill="#2a5878" opacity="0.9">Amsterdam-Rijnkanaal</text>
-      <text x="50" y="750" font-family="Georgia,serif" font-size="10" fill="#2a5878" opacity="0.9">Lek</text>
-      <text x="465" y="745" font-family="Georgia,serif" font-size="10" fill="#2a5878" opacity="0.9">Neder-Rijn</text>
-    </svg>
+    <div class="map-stage" id="map-stage">
+      <img src="map.png" alt="Handgetekende kaart Flevoland en Utrecht" class="map-img" id="map-img" width="882" height="1024">
 
     <!-- Clickable marker overlay -->
     <div class="map-overlay" id="map-overlay"></div>
@@ -353,6 +409,15 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
     <!-- Feedback text -->
     <div class="feedback fb-ok" id="fb-ok">NICE! 🎉</div>
     <div class="feedback fb-fail" id="fb-fail">FOUT! 💀</div>
+
+    <!-- Marker colors (gameplay only — hidden when not on game screen) -->
+    <div class="map-legend" id="map-legend" aria-label="Legenda markerkleuren">
+      <div class="map-legend-row"><span class="map-legend-dot leg-city" aria-hidden="true"></span><span>🔴 Rood = Stad</span></div>
+      <div class="map-legend-row"><span class="map-legend-dot leg-province" aria-hidden="true"></span><span>🟢 Groen = Provincie</span></div>
+      <div class="map-legend-row"><span class="map-legend-dot leg-area" aria-hidden="true"></span><span>🟣 Paars = Gebied</span></div>
+      <div class="map-legend-row"><span class="map-legend-dot leg-river" aria-hidden="true"></span><span>🔵 Blauw = Rivier</span></div>
+    </div>
+    </div>
   </div>
 </div>
 
@@ -374,6 +439,43 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   </div>
 </div>
 
+<!-- ===== CALIBRATE SCREEN ===== -->
+<div id="screen-calibrate" class="screen">
+  <div class="cal-hdr">
+    <h2>📍 Kaart kalibreren</h2>
+    <div class="cal-step" id="cal-step-lbl">Stap 1 / 11</div>
+    <div class="cal-step"><span id="cal-loc-name">—</span> · <span id="cal-loc-cat">—</span></div>
+    <div class="cal-hint">Klik op de kaart waar de stip hoort. Kleuren: <span style="color:var(--red)">rood</span> stad · <span style="color:var(--green)">groen</span> provincie · <span style="color:var(--purple)">paars</span> gebied · <span style="color:var(--blue)">blauw</span> rivier</div>
+  </div>
+  <div class="map-wrap" id="cal-map-wrap">
+    <div class="map-stage" id="cal-map-stage">
+      <img src="map.png" alt="Kaart" class="map-img" width="882" height="1024">
+      <div class="map-overlay" id="cal-map-overlay"></div>
+      <div class="cal-preview" id="cal-preview"></div>
+    </div>
+  </div>
+  <div class="cal-actions">
+    <button type="button" class="btn btn-yellow btn-sm" id="cal-btn-prev" onclick="calPrev()">← Vorige</button>
+    <button type="button" class="btn btn-blue btn-sm" onclick="calSkip()">Overslaan →</button>
+    <button type="button" class="btn btn-red btn-sm" onclick="calFinish()">✓ Klaar &amp; opslaan</button>
+    <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="calCancel()">Annuleren</button>
+  </div>
+  <div class="cal-export" id="cal-export-panel">
+    <label>Posities (plak in chat voor AI of bewaar als quest/positions.json)</label>
+    <textarea id="cal-export-ta" readonly></textarea>
+    <label for="cal-import-ta" style="margin-top:10px">JSON importeren (plak van AI of uit bestand)</label>
+    <textarea id="cal-import-ta" placeholder='[{"id":"l1","x":68.2,"y":19.7}, ...]'></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button type="button" class="btn btn-blue btn-sm" onclick="calImportJson()">⬆️ Importeer posities</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn btn-yellow btn-sm" onclick="calCopyJson()">📋 Kopieer JSON</button>
+      <button type="button" class="btn btn-blue btn-sm" onclick="calDownloadJson()">💾 Download positions.json</button>
+      <button type="button" class="btn btn-red btn-sm" onclick="showScreen('screen-start');initStart()">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== TOP 10 SCREEN ===== -->
 <div id="screen-top10" class="screen">
   <h2 style="font-size:clamp(20px,4vw,34px)">🏆 Top 10 Spelers</h2>
@@ -384,45 +486,255 @@ label{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--text-dim);d
   </div>
 </div>
 
+<div id="admin-hotspot" title="Admin" onclick="openAdminModal()" role="button" aria-label="Admin instellingen"></div>
+
+<div id="admin-modal" onclick="if(event.target===this)closeAdminModal()">
+  <div class="admin-panel" onclick="event.stopPropagation()">
+    <div id="admin-step-login">
+      <h3>🔐 Admin</h3>
+      <p>Voer het admin-wachtwoord in.</p>
+      <div class="field">
+        <label for="admin-pw-input">Wachtwoord</label>
+        <input id="admin-pw-input" type="password" autocomplete="off" placeholder="Wachtwoord..."
+          onkeydown="if(event.key==='Enter')adminSubmitPassword()">
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="btn btn-blue" onclick="adminSubmitPassword()">Inloggen</button>
+        <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="closeAdminModal()">Annuleren</button>
+      </div>
+    </div>
+    <div id="admin-step-menu" class="admin-hidden">
+      <h3>⚙️ Admin menu</h3>
+      <p>Timer: <strong id="admin-info-timer"></strong>s · Categorieën: <strong id="admin-info-cats"></strong> (1=aan, 0=uit)</p>
+      <div class="admin-menu">
+        <button type="button" class="btn btn-blue" onclick="adminShowTimer()">1 — Timer aanpassen</button>
+        <button type="button" class="btn btn-blue" onclick="adminShowCategories()">2 — Categorieën aan/uit</button>
+        <button type="button" class="btn btn-yellow" onclick="adminStartCalibrate()">3 — Kaart kalibreren</button>
+        <button type="button" class="btn btn-yellow" onclick="adminShowExport()">4 — Posities exporteren</button>
+        <button type="button" class="btn btn-yellow" onclick="adminShowImport()">5 — Posities importeren</button>
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="closeAdminModal()">Sluiten</button>
+      </div>
+    </div>
+    <div id="admin-step-timer" class="admin-hidden">
+      <h3>⏱ Timer</h3>
+      <div class="field">
+        <label for="admin-timer-input">Seconden per ronde (5–120)</label>
+        <input id="admin-timer-input" type="number" min="5" max="120" step="1"
+          onkeydown="if(event.key==='Enter')adminSaveTimer()">
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="btn btn-blue" onclick="adminSaveTimer()">Opslaan</button>
+        <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="adminShowMenu()">Terug</button>
+      </div>
+    </div>
+    <div id="admin-step-categories" class="admin-hidden">
+      <h3>📂 Categorieën</h3>
+      <p>4 cijfers: stad, provincie, gebied, rivier (1=aan, 0=uit)</p>
+      <div class="field">
+        <label for="admin-cats-input">Vlaggen</label>
+        <input id="admin-cats-input" type="text" maxlength="4" inputmode="numeric" placeholder="1111"
+          onkeydown="if(event.key==='Enter')adminSaveCategories()">
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="btn btn-blue" onclick="adminSaveCategories()">Opslaan</button>
+        <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="adminShowMenu()">Terug</button>
+      </div>
+    </div>
+    <div id="admin-step-import" class="admin-hidden">
+      <h3>⬆️ Posities importeren</h3>
+      <p>Plak JSON met id, x, y (en optioneel zone).</p>
+      <div class="field">
+        <label for="admin-import-ta">JSON</label>
+        <textarea id="admin-import-ta" class="admin-import-ta" placeholder='[{"id":"l1","x":68.2,"y":19.7}, ...]'></textarea>
+      </div>
+      <div class="admin-actions">
+        <button type="button" class="btn btn-blue" onclick="adminImportJson()">Importeer</button>
+        <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--text-dim)" onclick="adminShowMenu()">Terug</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
+<script src="config.js"></script>
 <script>
 // ===== LOCATION DATA =====
-// x/y are percentages of the map container (matching SVG viewBox proportions)
+// x/y = % positie op handgetekende kaart (map.png, 882×1024)
+// category: city | province | area | river
+// x/y = klikpunt op de kaart (alle types: ronde dot)
+const CATEGORY_LABELS = {
+  city:'🏙️ Stad',
+  province:'🗺️ Provincie',
+  area:'🌿 Gebied',
+  river:'🌊 Rivier'
+};
+const DEFAULT_CATEGORIES = { city:true, province:true, area:true, river:true };
+
 const DEFAULTS = [
   {
-    id:'l1', name:'Emmeloord', x:62, y:14,
+    id:'l1', category:'city', name:'Emmeloord', x:68.4, y:19.9,
     mt:'🎮 Een Roblox-speler is gesignaleerd in <span class="loc-name">Emmeloord</span>! Wijs de stad aan!',
     hints:['Deze stad ligt in de Noordoostpolder.','Emmeloord is de enige echte stad van de Noordoostpolder.']
   },
   {
-    id:'l2', name:'Lelystad', x:41, y:28,
+    id:'l2', category:'city', name:'Lelystad', x:52.3, y:37.3,
     mt:'🏗️ Bouwplaats ontdekt in <span class="loc-name">Lelystad</span>! Tik de stad aan op de kaart!',
     hints:['Dit is de hoofdstad van de provincie Flevoland.','Lelystad ligt aan het Markermeer.']
   },
   {
-    id:'l3', name:'Almere', x:36, y:48,
+    id:'l3', category:'city', name:'Almere', x:34.9, y:51.1,
     mt:'💎 Robux-schat verstopt in <span class="loc-name">Almere</span>! Wijs de stad snel aan!',
     hints:['Dit is de grootste stad van Flevoland.','Almere grenst aan Amsterdam via het IJmeer.']
   },
   {
-    id:'l4', name:'Amersfoort', x:50, y:65,
+    id:'l4', category:'city', name:'Amersfoort', x:48.3, y:70.5,
     mt:'⚔️ Gevecht uitgebroken op server in <span class="loc-name">Amersfoort</span>! Vind de stad!',
     hints:['Deze stad ligt in de provincie Utrecht.','Amersfoort is beroemd om zijn historische Koppelpoort.']
   },
   {
-    id:'l5', name:'Utrecht', x:28, y:76,
-    mt:'🚀 Spawn point gevonden in <span class="loc-name">Utrecht</span>! Wijs de stad aan!',
+    id:'l5', category:'city', name:'Utrecht', x:31.1, y:77.3,
+    mt:'🚀 Spawn point gevonden in <span class="loc-name">Utrecht</span> (stad)! Wijs de stad aan!',
     hints:['Dit is de hoofdstad van de provincie Utrecht.','Utrecht heeft de beroemde Domtoren — de hoogste kerktoren van Nederland.']
+  },
+  {
+    id:'p1', category:'province', name:'Flevoland', x:59.8, y:40.9, zone:{ w:38, h:42 },
+    mt:'🏝️ Missie: tik de provincie <span class="loc-name">Flevoland</span> aan op de kaart!',
+    hints:['Deze provincie bestaat uit polders en eilanden in het IJsselmeer.','Almere, Lelystad en Emmeloord liggen allemaal in deze provincie.']
+  },
+  {
+    id:'p2', category:'province', name:'Utrecht', x:41.8, y:82, zone:{ w:32, h:24 },
+    mt:'🗺️ Vind de provincie <span class="loc-name">Utrecht</span> op de kaart (niet alleen de stad)!',
+    hints:['Het vasteland onder Flevoland hoort bij deze provincie.','Amersfoort ligt ook in deze provincie.']
+  },
+  {
+    id:'a1', category:'area', name:'Oostvaardersplassen', x:44, y:44.9, zone:{ w:14, h:12 },
+    mt:'🦌 Natuur-alert! Wijs het gebied <span class="loc-name">Oostvaardersplassen</span> aan op de kaart!',
+    hints:['Zoek de paarse stip tussen Almere en Lelystad.','Dit natuurgebied ligt tussen Almere en Lelystad.']
+  },
+  {
+    id:'r1', category:'river', name:'Amsterdam-Rijnkanaal', x:33.6, y:84.9, zone:{ left:30.6, top:69.9, w:6, h:30 },
+    mt:'🚢 Vind het <span class="loc-name">Amsterdam-Rijnkanaal</span> op de kaart!',
+    hints:['Deze waterweg loopt vanaf het zuiden langs Utrecht naar het noorden.','Tik de blauwe stip op het kanaal westelijk van Utrecht.']
+  },
+  {
+    id:'r2', category:'river', name:'Lek', x:28.7, y:87.4, zone:{ left:13.7, top:83.9, w:30, h:7 },
+    mt:'🌊 Wijs de rivier <span class="loc-name">Lek</span> aan — het westelijke deel van de onderste rivier!',
+    hints:['De Lek is het westelijke stuk van de grote rivier onderaan de kaart.','Tik de blauwe stip op het linkerdeel van de rivier onderaan.']
+  },
+  {
+    id:'r3', category:'river', name:'Neder-Rijn', x:58.3, y:87.5, zone:{ left:41.3, top:84, w:34, h:7 },
+    mt:'🌊 Vind de <span class="loc-name">Neder-Rijn</span> op de kaart — het oostelijke deel van de onderste rivier!',
+    hints:['De Neder-Rijn is het oostelijke stuk van de rivier onderaan.','Tik de blauwe stip op het rechterdeel van de rivier onderaan.']
   },
 ];
 
 // ===== CONFIG & STATE =====
-const SK = 'topo_quest_cfg', QK = 'topo_quest_scores';
+const SK = 'topo_quest_cfg', QK = 'topo_quest_scores', PK = 'topo_quest_positions';
+
+function defaultCfg() {
+  return {
+    timerSeconds: 15,
+    adminPassword: 'quest123',
+    categories: { ...DEFAULT_CATEGORIES },
+    locations: DEFAULTS.map(d => ({ ...d, zone: d.zone ? { ...d.zone } : undefined }))
+  };
+}
+
+function mergeCfgFromDefaults(s) {
+  if (!s.categories) s.categories = { ...DEFAULT_CATEGORIES };
+  const list = Array.isArray(s.locations) ? s.locations : [];
+  const byId = new Map(list.map(l => [l.id, l]));
+  DEFAULTS.forEach(d => {
+    if (!byId.has(d.id)) list.push({ ...d, zone: d.zone ? { ...d.zone } : undefined });
+    else {
+      const loc = byId.get(d.id);
+      loc.category = d.category;
+      loc.name = d.name;
+      if (loc.x == null) loc.x = d.x;
+      if (loc.y == null) loc.y = d.y;
+      loc.mt = d.mt;
+      loc.hints = d.hints ? [...d.hints] : [];
+      if (!loc.zone && d.zone) loc.zone = { ...d.zone };
+    }
+  });
+  s.locations = list;
+  return s;
+}
+
+function saveCfg() {
+  localStorage.setItem(SK, JSON.stringify(cfg));
+}
+
+function savePositionsBackup() {
+  try {
+    localStorage.setItem(PK, JSON.stringify(buildPositionsExport()));
+  } catch (e) {}
+}
+
+function roundPct(n) { return Math.round(n * 10) / 10; }
+
+function applyPositionToLoc(loc, pos) {
+  if (pos.x != null) loc.x = pos.x;
+  if (pos.y != null) loc.y = pos.y;
+  if (pos.zone) loc.zone = { ...pos.zone };
+}
+
+function applyPositionsList(arr) {
+  if (!Array.isArray(arr)) return;
+  const byId = new Map(cfg.locations.map(l => [l.id, l]));
+  arr.forEach(p => {
+    if (!p || !p.id) return;
+    const loc = byId.get(p.id);
+    if (loc) applyPositionToLoc(loc, p);
+  });
+}
+
+function setLocPositionFromClick(loc, x, y) {
+  loc.x = roundPct(x);
+  loc.y = roundPct(y);
+  const z = loc.zone;
+  if (z && z.left != null && z.w != null) {
+    z.left = roundPct(x - z.w / 2);
+    z.top = roundPct(y - z.h / 2);
+  }
+}
+
+function buildPositionsExport() {
+  return cfg.locations.map(l => {
+    const o = { id: l.id, x: l.x, y: l.y };
+    if (l.zone) o.zone = { ...l.zone };
+    return o;
+  });
+}
+
+async function loadPositionsJson() {
+  try {
+    const res = await fetch('positions.json?_=' + Date.now());
+    if (!res.ok) return;
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.positions || []);
+    applyPositionsList(list);
+  } catch (e) {}
+}
 
 function loadCfg() {
-  try { const s = JSON.parse(localStorage.getItem(SK)); if (s && s.timerSeconds) return s; } catch(e) {}
-  return { timerSeconds: 15, adminPassword: 'quest123', locations: DEFAULTS.map(d => ({...d})) };
+  try {
+    const s = JSON.parse(localStorage.getItem(SK));
+    if (s && s.timerSeconds) return mergeCfgFromDefaults(s);
+  } catch(e) {}
+  return defaultCfg();
+}
+
+function getActiveLocations() {
+  const cats = cfg.categories || DEFAULT_CATEGORIES;
+  return cfg.locations.filter(l => {
+    if (l.x == null) return false;
+    const c = l.category || 'city';
+    return cats[c] !== false;
+  });
 }
 let cfg = loadCfg();
 let gs = {};
@@ -450,9 +762,18 @@ function toast(msg, err) {
 
 // ===== INIT START =====
 function initStart() {
-  const n = cfg.locations.filter(l => l.x !== null).length;
+  const locs = getActiveLocations();
+  const n = locs.length;
   document.getElementById('loc-count').textContent = n;
   document.getElementById('timer-info').textContent = cfg.timerSeconds;
+  const parts = [];
+  const cats = cfg.categories || DEFAULT_CATEGORIES;
+  if (cats.city !== false) parts.push(locs.filter(l => (l.category || 'city') === 'city').length + ' steden');
+  if (cats.province !== false) parts.push(locs.filter(l => l.category === 'province').length + ' provincies');
+  if (cats.area !== false) parts.push(locs.filter(l => l.category === 'area').length + ' gebied');
+  if (cats.river !== false) parts.push(locs.filter(l => l.category === 'river').length + ' rivieren');
+  const el = document.getElementById('loc-breakdown');
+  if (el) el.textContent = parts.length ? parts.join(' · ') : 'Geen categorieën actief (admin)';
 }
 
 // ===== START GAME =====
@@ -463,7 +784,11 @@ function startGame() {
   resetGs();
   gs.name = name;
 
-  const locs = cfg.locations.filter(l => l.x !== null);
+  const locs = getActiveLocations();
+  if (!locs.length) {
+    toast('Geen locaties actief — zet categorieën aan via admin', true);
+    return;
+  }
   gs.queue = shuffle([...locs]);
 
   document.getElementById('g-agent').textContent = '👤 ' + gs.name;
@@ -510,16 +835,25 @@ function animChar(type) {
 // ===== MARKERS =====
 let markerEls = {};
 
+function applyMarkerGeometry(m, loc) {
+  m.style.width = '';
+  m.style.height = '';
+  m.classList.remove('has-zone');
+  m.style.left = loc.x + '%';
+  m.style.top = loc.y + '%';
+  m.style.transform = 'translate(-50%, -50%)';
+}
+
 function buildMarkers() {
   const overlay = document.getElementById('map-overlay');
   overlay.innerHTML = '';
   markerEls = {};
 
-  cfg.locations.filter(l => l.x !== null).forEach(loc => {
+  getActiveLocations().forEach(loc => {
+    const cat = loc.category || 'city';
     const m = document.createElement('div');
-    m.className = 'marker';
-    m.style.left = loc.x + '%';
-    m.style.top = loc.y + '%';
+    m.className = 'marker marker-' + cat;
+    applyMarkerGeometry(m, loc);
     m.dataset.id = loc.id;
     m.addEventListener('click', () => onMarkerClick(loc.id));
     overlay.appendChild(m);
@@ -536,7 +870,12 @@ function nextQuestion() {
   gs.hintShown = 0;
   gs.answered = false;
 
-  Object.values(markerEls).forEach(m => m.className = 'marker');
+  Object.entries(markerEls).forEach(([id, m]) => {
+    const loc = cfg.locations.find(l => l.id === id);
+    const cat = loc ? (loc.category || 'city') : 'city';
+    m.className = 'marker marker-' + cat;
+    if (loc) applyMarkerGeometry(m, loc);
+  });
 
   if (gs.idx >= gs.queue.length || gs.lives <= 0) {
     endGame();
@@ -544,6 +883,9 @@ function nextQuestion() {
   }
 
   const loc = gs.queue[gs.idx];
+  const cat = loc.category || 'city';
+  const catEl = document.getElementById('g-mission-cat');
+  if (catEl) catEl.textContent = CATEGORY_LABELS[cat] || '';
   document.getElementById('g-mission').innerHTML = loc.mt;
   document.getElementById('g-prog').textContent = (gs.idx + 1) + ' / ' + gs.queue.length;
   gs.questionStart = Date.now();
@@ -609,7 +951,12 @@ function onMarkerClick(id) {
     animChar('fail');
     playSound('fail');
     showFeedback('fail', 'FOUT! 💀');
-    setTimeout(() => m.className = 'marker', 500);
+    setTimeout(() => {
+      const wrongLoc = cfg.locations.find(l => l.id === id);
+      const cat = wrongLoc ? (wrongLoc.category || 'city') : 'city';
+      m.className = 'marker marker-' + cat;
+      if (wrongLoc) applyMarkerGeometry(m, wrongLoc);
+    }, 500);
   }
 }
 
@@ -680,27 +1027,112 @@ function endGame() {
   if (gs.score > 0) saveScore(gs.name, gs.score, gs.ok);
 }
 
-// ===== SCORES =====
+// ===== SCORES (JSONBin + localStorage fallback) =====
+const JSONBIN_PLACEHOLDER = { name: '_init', score: 0, ok: 0, date: '' };
+let scoresCache = null;
+let scoresLoadPromise = null;
+
+function getJsonBinCfg() {
+  const c = window.TOPO_QUEST_JSONBIN;
+  return (c && c.binId && c.accessKey) ? c : null;
+}
+
+function normalizeScores(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter(s => s && s.name !== '_init' && typeof s.score === 'number')
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+}
+
+function readLocalScores() {
+  try { return normalizeScores(JSON.parse(localStorage.getItem(QK)) || []); } catch (e) { return []; }
+}
+
+function writeLocalScores(arr) {
+  try { localStorage.setItem(QK, JSON.stringify(normalizeScores(arr))); } catch (e) {}
+}
+
+function jsonBinPayload(arr) {
+  const clean = normalizeScores(arr);
+  return clean.length ? clean : [JSONBIN_PLACEHOLDER];
+}
+
+async function fetchRemoteScores() {
+  const jb = getJsonBinCfg();
+  if (!jb) return null;
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + jb.binId + '/latest', {
+    headers: { 'X-Access-Key': jb.accessKey }
+  });
+  if (!res.ok) throw new Error('JSONBin read failed');
+  const data = await res.json();
+  const record = data.record;
+  return normalizeScores(Array.isArray(record) ? record : []);
+}
+
+async function pushRemoteScores(arr) {
+  const jb = getJsonBinCfg();
+  if (!jb) return false;
+  const res = await fetch('https://api.jsonbin.io/v3/b/' + jb.binId, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Access-Key': jb.accessKey
+    },
+    body: JSON.stringify(jsonBinPayload(arr))
+  });
+  return res.ok;
+}
+
+function getScores() {
+  return scoresCache !== null ? scoresCache : readLocalScores();
+}
+
+async function loadScoresFromCloud() {
+  if (!getJsonBinCfg()) {
+    scoresCache = readLocalScores();
+    return scoresCache;
+  }
+  try {
+    const remote = await fetchRemoteScores();
+    scoresCache = remote;
+    writeLocalScores(remote);
+    return remote;
+  } catch (e) {
+    scoresCache = readLocalScores();
+    return scoresCache;
+  }
+}
+
+async function persistScores(arr) {
+  arr = normalizeScores(arr);
+  scoresCache = arr;
+  writeLocalScores(arr);
+  if (!getJsonBinCfg()) return;
+  try { await pushRemoteScores(arr); } catch (e) {}
+}
+
 function saveScore(name, score, ok) {
   try {
-    let arr = JSON.parse(localStorage.getItem(QK)) || [];
+    let arr = getScores().slice();
     arr.push({ name, score, ok: ok || 0, date: new Date().toLocaleDateString('nl-NL') });
-    arr.sort((a, b) => b.score - a.score);
-    arr = arr.slice(0, 10);
-    localStorage.setItem(QK, JSON.stringify(arr));
+    arr = normalizeScores(arr);
     const rank = arr.findIndex(s => s.score === score) + 1;
     if (rank) document.getElementById('rank-info').textContent = '🏅 Jij staat op plek #' + rank + '!';
-  } catch(e) {}
+    persistScores(arr);
+  } catch (e) {}
 }
 
 function loadTop10() {
   const list = document.getElementById('t10-list');
-  try {
-    const arr = JSON.parse(localStorage.getItem(QK)) || [];
-    renderTop10(arr, list);
-  } catch(e) {
-    list.innerHTML = '<div class="t10-empty">Kan scorebord niet laden.</div>';
-  }
+  list.innerHTML = '<div class="t10-empty">Laden...</div>';
+  const show = arr => {
+    try { renderTop10(arr, list); } catch (e) {
+      list.innerHTML = '<div class="t10-empty">Kan scorebord niet laden.</div>';
+    }
+  };
+  if (scoresCache !== null) return show(scoresCache);
+  (scoresLoadPromise || loadScoresFromCloud()).then(show).catch(() => show(readLocalScores()));
 }
 
 function renderTop10(arr, list) {
@@ -749,23 +1181,346 @@ function playSound(type) {
 }
 
 // ===== ADMIN =====
-function showAdminPrompt() {
-  const pw = prompt('Admin wachtwoord:');
-  if (pw === cfg.adminPassword) {
-    const sec = prompt('Timer seconden (huidig: ' + cfg.timerSeconds + '):');
-    if (sec && !isNaN(+sec) && +sec >= 5 && +sec <= 120) {
-      cfg.timerSeconds = +sec;
-      localStorage.setItem(SK, JSON.stringify(cfg));
-      initStart();
-      toast('Timer ingesteld op ' + sec + 's');
-    }
-  } else if (pw !== null) {
+function categoryFlagsToString() {
+  const c = cfg.categories || DEFAULT_CATEGORIES;
+  return ['city','province','area','river'].map(k => (c[k] !== false ? '1' : '0')).join('');
+}
+
+function applyCategoryFlags(str) {
+  if (!str || str.length < 4) return false;
+  const keys = ['city','province','area','river'];
+  cfg.categories = cfg.categories || { ...DEFAULT_CATEGORIES };
+  keys.forEach((k, i) => { cfg.categories[k] = str[i] !== '0'; });
+  return true;
+}
+
+const ADMIN_STEPS = ['admin-step-login','admin-step-menu','admin-step-timer','admin-step-categories','admin-step-import'];
+
+function adminShowStep(stepId) {
+  ADMIN_STEPS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('admin-hidden', id !== stepId);
+  });
+}
+
+function adminFocus(id) {
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.focus();
+    if (typeof el.select === 'function') el.select();
+  }, 60);
+}
+
+function openAdminModal() {
+  const modal = document.getElementById('admin-modal');
+  const pw = document.getElementById('admin-pw-input');
+  if (pw) pw.value = '';
+  adminShowStep('admin-step-login');
+  modal.classList.add('open');
+  adminFocus('admin-pw-input');
+}
+
+function closeAdminModal() {
+  document.getElementById('admin-modal').classList.remove('open');
+  const pw = document.getElementById('admin-pw-input');
+  if (pw) pw.value = '';
+}
+
+function showAdminPrompt() { openAdminModal(); }
+
+function adminSubmitPassword() {
+  const pw = document.getElementById('admin-pw-input').value;
+  if (pw !== cfg.adminPassword) {
     toast('Verkeerd wachtwoord', true);
+    adminFocus('admin-pw-input');
+    return;
+  }
+  adminShowMenu();
+}
+
+function adminShowMenu() {
+  document.getElementById('admin-info-timer').textContent = cfg.timerSeconds;
+  document.getElementById('admin-info-cats').textContent = categoryFlagsToString();
+  adminShowStep('admin-step-menu');
+}
+
+function adminShowTimer() {
+  const inp = document.getElementById('admin-timer-input');
+  inp.value = cfg.timerSeconds;
+  adminShowStep('admin-step-timer');
+  adminFocus('admin-timer-input');
+}
+
+function adminSaveTimer() {
+  const sec = +document.getElementById('admin-timer-input').value;
+  if (!sec || isNaN(sec) || sec < 5 || sec > 120) {
+    toast('Kies een getal tussen 5 en 120', true);
+    return;
+  }
+  cfg.timerSeconds = sec;
+  saveCfg();
+  initStart();
+  toast('Timer ingesteld op ' + sec + 's');
+  adminShowMenu();
+}
+
+function adminShowCategories() {
+  const inp = document.getElementById('admin-cats-input');
+  inp.value = categoryFlagsToString();
+  adminShowStep('admin-step-categories');
+  adminFocus('admin-cats-input');
+}
+
+function adminSaveCategories() {
+  const flags = document.getElementById('admin-cats-input').value.replace(/\s/g, '');
+  if (!/^[01]{4}$/.test(flags)) {
+    toast('Gebruik 4 cijfers (1 of 0)', true);
+    return;
+  }
+  applyCategoryFlags(flags);
+  saveCfg();
+  initStart();
+  toast('Categorieën bijgewerkt');
+  adminShowMenu();
+}
+
+function adminStartCalibrate() {
+  closeAdminModal();
+  startCalibration();
+}
+
+function adminShowExport() {
+  closeAdminModal();
+  showPositionsExport(false);
+}
+
+function adminShowImport() {
+  document.getElementById('admin-import-ta').value = '';
+  adminShowStep('admin-step-import');
+  adminFocus('admin-import-ta');
+}
+
+function adminImportJson() {
+  const raw = document.getElementById('admin-import-ta').value.trim();
+  if (!raw) {
+    toast('Plak eerst JSON in het veld', true);
+    return;
+  }
+  if (importPositionsFromText(raw)) closeAdminModal();
+}
+
+// ===== MAP CALIBRATION =====
+const cal = { step: 0, order: [], clickBound: false };
+
+function applyCalPreviewStyle(el, loc) {
+  if (!el) return;
+  if (!loc || loc.x == null) {
+    el.className = 'cal-preview';
+    return;
+  }
+  el.className = 'cal-preview show';
+  const cat = loc.category || 'city';
+  if (cat === 'province') el.classList.add('zone-marker');
+  else if (cat === 'area') el.classList.add('area-marker');
+  else if (cat === 'river') el.classList.add('river-marker');
+  el.style.left = loc.x + '%';
+  el.style.top = loc.y + '%';
+}
+
+function parsePositionsJson(raw) {
+  const data = JSON.parse(raw);
+  return Array.isArray(data) ? data : (data.positions || []);
+}
+
+function importPositionsFromText(raw) {
+  try {
+    const list = parsePositionsJson(raw.trim());
+    if (!list.length) {
+      toast('Geen posities gevonden in JSON', true);
+      return false;
+    }
+    applyPositionsList(list);
+    cfg.positionsCalibrated = true;
+    saveCfg();
+    savePositionsBackup();
+    initStart();
+    toast(list.length + ' posities geïmporteerd');
+    return true;
+  } catch (e) {
+    toast('Ongeldige JSON', true);
+    return false;
   }
 }
 
+function getCalibrationOrder() {
+  return DEFAULTS.map(d => d.id);
+}
+
+function startCalibration() {
+  cal.step = 0;
+  cal.order = getCalibrationOrder();
+  document.getElementById('cal-export-panel').classList.remove('show');
+  showScreen('screen-calibrate');
+  bindCalMapClick();
+  renderCalMarkers();
+  updateCalUI();
+}
+
+function bindCalMapClick() {
+  const wrap = document.getElementById('cal-map-wrap');
+  if (cal.clickBound) return;
+  wrap.addEventListener('click', onCalMapClick);
+  cal.clickBound = true;
+}
+
+function onCalMapClick(e) {
+  const stage = document.getElementById('cal-map-stage');
+  const rect = stage.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  if (x < 0 || x > 100 || y < 0 || y > 100) return;
+
+  const loc = getCalLoc();
+  if (!loc) return;
+  setLocPositionFromClick(loc, x, y);
+
+  applyCalPreviewStyle(document.getElementById('cal-preview'), loc);
+  renderCalMarkers();
+  toast(loc.name + ' → ' + loc.x + '%, ' + loc.y + '%');
+
+  if (cal.step < cal.order.length - 1) {
+    cal.step++;
+    updateCalUI();
+  } else {
+    calFinish();
+  }
+}
+
+function getCalLoc() {
+  const id = cal.order[cal.step];
+  return cfg.locations.find(l => l.id === id);
+}
+
+function updateCalUI() {
+  const loc = getCalLoc();
+  const total = cal.order.length;
+  document.getElementById('cal-step-lbl').textContent = 'Stap ' + (cal.step + 1) + ' / ' + total;
+  document.getElementById('cal-loc-name').textContent = loc ? loc.name : '—';
+  document.getElementById('cal-loc-cat').textContent = loc ? (CATEGORY_LABELS[loc.category || 'city'] || '') : '—';
+  document.getElementById('cal-btn-prev').disabled = cal.step <= 0;
+
+  applyCalPreviewStyle(document.getElementById('cal-preview'), loc);
+}
+
+function renderCalMarkers() {
+  const overlay = document.getElementById('cal-map-overlay');
+  overlay.innerHTML = '';
+  const currentId = cal.order[cal.step];
+  cfg.locations.forEach(loc => {
+    if (loc.x == null) return;
+    const cat = loc.category || 'city';
+    const m = document.createElement('div');
+    m.className = 'marker marker-' + cat + (loc.id === currentId ? ' cal-current' : '');
+    applyMarkerGeometry(m, loc);
+    m.style.opacity = loc.id === currentId ? '1' : '0.45';
+    m.style.pointerEvents = 'none';
+    overlay.appendChild(m);
+  });
+}
+
+function calPrev() {
+  if (cal.step > 0) { cal.step--; updateCalUI(); renderCalMarkers(); }
+}
+
+function calSkip() {
+  if (cal.step < cal.order.length - 1) { cal.step++; updateCalUI(); renderCalMarkers(); }
+  else calFinish();
+}
+
+function calCancel() {
+  cfg = loadCfg();
+  showScreen('screen-start');
+  toast('Kalibratie geannuleerd');
+}
+
+function calFinish() {
+  cfg.positionsCalibrated = true;
+  saveCfg();
+  savePositionsBackup();
+  showPositionsExport();
+  toast('Posities opgeslagen in deze browser');
+}
+
+function calImportJson() {
+  const raw = document.getElementById('cal-import-ta').value.trim();
+  if (!raw) {
+    toast('Plak eerst JSON in het importveld', true);
+    return;
+  }
+  if (importPositionsFromText(raw)) {
+    document.getElementById('cal-export-ta').value = JSON.stringify(buildPositionsExport(), null, 2);
+    renderCalMarkers();
+    updateCalUI();
+  }
+}
+
+function showPositionsExport(focusImport) {
+  const json = JSON.stringify(buildPositionsExport(), null, 2);
+  document.getElementById('cal-export-ta').value = json;
+  const panel = document.getElementById('cal-export-panel');
+  panel.classList.add('show');
+  showScreen('screen-calibrate');
+  setTimeout(() => {
+    const target = focusImport ? document.getElementById('cal-import-ta') : panel;
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 120);
+}
+
+function calCopyJson() {
+  const ta = document.getElementById('cal-export-ta');
+  const json = ta.value || JSON.stringify(buildPositionsExport(), null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(() => toast('JSON gekopieerd')).catch(() => {
+      ta.select();
+      document.execCommand('copy');
+      toast('JSON gekopieerd');
+    });
+  } else {
+    ta.select();
+    document.execCommand('copy');
+    toast('JSON gekopieerd');
+  }
+}
+
+function calDownloadJson() {
+  const json = document.getElementById('cal-export-ta').value || JSON.stringify(buildPositionsExport(), null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'positions.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('positions.json gedownload — vervang quest/positions.json in het project');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('admin-modal').classList.contains('open')) closeAdminModal();
+});
+
 // ===== BOOT =====
-initStart();
+scoresLoadPromise = loadScoresFromCloud();
+(async function boot() {
+  cfg = loadCfg();
+  if (!cfg.positionsCalibrated) {
+    await loadPositionsJson();
+    try {
+      const backup = localStorage.getItem(PK);
+      if (backup) applyPositionsList(parsePositionsJson(backup));
+    } catch (e) {}
+  }
+  initStart();
+})();
 </script>
 </body>
 </html>
